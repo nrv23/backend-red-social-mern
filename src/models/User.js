@@ -16,7 +16,7 @@ const usuarioSchema = mongoose.Schema({
     },
     pais: {
         type: String,
-        required: true
+        required: false
     },
     profesion: {
         type: String,
@@ -24,7 +24,7 @@ const usuarioSchema = mongoose.Schema({
     },
     fechaNacimiento: {
         type: Date,
-        required: true
+        required: false
     },
     telefono: {
         type: Date,
