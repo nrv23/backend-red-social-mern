@@ -40,7 +40,6 @@ function comparePass(password, hashPass) {
             return resolve(response);
         })
     })
-
 }
 
 

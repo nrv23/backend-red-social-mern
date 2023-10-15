@@ -18,6 +18,10 @@ const usuarioSchema = mongoose.Schema({
         type: String,
         required: false
     },
+    genero: {
+        type: String,
+        required: false
+    },
     profesion: {
         type: String,
         required: false
@@ -27,7 +31,7 @@ const usuarioSchema = mongoose.Schema({
         required: false
     },
     telefono: {
-        type: Date,
+        type: String,
         required: false
     },
     avatar: {
