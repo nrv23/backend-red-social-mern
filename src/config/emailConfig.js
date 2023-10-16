@@ -1,12 +1,14 @@
 const { createTransport } = require("nodemailer");
 const smtp = require("nodemailer-smtp-transport");
+const config = require("../envs/config");
 
+console.log(config);
 const transport = createTransport(smtp({
-    service: "gmail",
-    host: "smt.gmail.com",
+    service: config.service,
+    host: config.email_host,
     auth: {
-        user: "nrv2391@gmail.com",
-        pass: "izmwscdjfzxoepjp"
+        user: config.user_email,
+        pass: config.googleKey
     }
 }))
 
