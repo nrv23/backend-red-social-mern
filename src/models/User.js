@@ -41,7 +41,8 @@ const usuarioSchema = mongoose.Schema({
     estado: { type: Boolean, default: true },
     descripcion: { type: String, required: false },
     username: { type: String, required: false },
-    password: { type: String, required: true }
+    password: { type: String, required: true },
+    codigo_reset: { type: String, required: false }
 });
 
 

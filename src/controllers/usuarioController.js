@@ -4,11 +4,12 @@ const { responseBody } = require("../helpers/response-body");
 const { userExists } = require("../helpers/validateUserExistence");
 const { createToken } = require("../helpers/jwt");
 const { generate } = require("../helpers/username-generator");
+const { generarAleatorios } = require("../helpers/aleatorio");
+const Email = require("../lib/Email");
 
 
 const registar = async (req, res) => {
     let response = {};
-
 
     try {
 
@@ -62,7 +63,7 @@ const registar = async (req, res) => {
     } catch (error) {
 
         response = responseBody({ code: 500, message: error.message, data: null });
-        return res.status(500).json(response);
+        return res.status(+response.code).json(response);
     }
 }
 
@@ -79,7 +80,7 @@ const login = async (req, res) => {
 
             return res.status(+data.code).json(data);
         }
-        console.log("Llegó")
+
         const compareHash = await comparePass(password, exists.password);
 
         if (!compareHash) {
@@ -103,8 +104,8 @@ const login = async (req, res) => {
         return res.status(+response.code).json(response);
 
     } catch (error) {
-        data = responseBody({ code: 500, message: error.message, data: null });
-        return res.status(500).json(response);
+        response = responseBody({ code: 500, message: error.message, data: null });
+        return res.status(+response.code).json(response);
     }
 }
 
@@ -122,7 +123,7 @@ const obtenerUsuario = async (req, res) => {
 
         if (!usuario || usuario?.length === 0) {
             response = responseBody({
-                code: 400, message: "Usuario no existe", data: null
+                code: 404, message: "Usuario no existe", data: null
             });
 
             return res.status(+data.code).json(data);
@@ -139,8 +140,8 @@ const obtenerUsuario = async (req, res) => {
 
     } catch (error) {
 
-        data = responseBody({ code: 500, message: error.message, data: null });
-        return res.status(500).json(response);
+        response = responseBody({ code: 500, message: error.message, data: null });
+        return res.status(+response.code).json(response);
     }
 }
 
@@ -221,13 +222,200 @@ const actualizarCuenta = async (req, res) => {
 
     } catch (error) {
         console.log(error)
-        data = responseBody({ code: 500, message: error.message, data: null });
-        return res.status(500).json(response);
+        response = responseBody({ code: 500, message: error.message, data: null });
+        return res.status(+response.code).json(response);
     }
 }
+
+const actualizarContrasena = async (req, res) => {
+
+    let response = {};
+    const { sub: id } = req.currentUser;
+    const { password, newpassword } = req.body;
+
+    try {
+
+        const exists = await userExists(id);
+
+        if (!exists || exists?.length === 0) {
+            response = responseBody({
+                code: 404, message: "Usuario no existe", data: null
+            });
+
+            return res.status(+response.code).json(response);
+        }
+
+        if (!(await comparePass(password, exists.password))) {
+            response = responseBody({
+                code: 400, message: "Usuario/Contraseña inválidos", data: null
+            });
+
+            return res.status(+response.code).json(response);
+        }
+
+        const passwordUpdated = await Usuario.updateOne({ _id: id }, {
+            password: await encriptPassword(newpassword)
+        });
+
+        if (!passwordUpdated) {
+            response = responseBody({
+                code: 500, message: "No se actualizó el usuario", data: null
+            });
+        } else {
+            response = responseBody({
+                code: 200, message: "Se actualizó el usuario", data: null
+            });
+        }
+
+        return res.status(+response.code).json(response);
+
+    } catch (error) {
+        console.log({ error })
+        response = responseBody({ code: 500, message: error.message, data: error });
+        return res.status(+response.code).json(response);
+    }
+}
+
+const validarCuenta = async (req, res) => {
+
+    let response = {};
+
+    try {
+
+        const { email } = req.params;
+        const exists = await userExists(email);
+
+        if (!exists || exists?.length === 0) {
+            response = responseBody({
+                code: 404, message: "Usuario no existe", data: false
+            });
+
+            return res.status(+response.code).json(response);
+        }
+
+        //actualizar el codigo de envio 
+        const codigo_reset = generarAleatorios(6);
+        const updated = await Usuario.updateOne({
+            _id: exists._id
+        }, {
+            codigo_reset: codigo_reset.trim()
+        });
+
+        if (!updated) {
+            response = responseBody({
+                code: 500, message: "No se actualizó el usuario", data: null
+            });
+
+            return res.status(+response.code).json(response);
+        }
+
+        response = responseBody({
+            code: 200,
+            message: "Revisa tu bandeja de entra. Se ha enviado un correo con un código de verificación",
+            data: null
+        });
+
+        await new Email(codigo_reset, email).sendEmail();
+        // emviar el correo
+
+        return res.status(+response.code).json(response);
+
+    } catch (error) {
+        console.log({ error })
+        response = responseBody({ code: 500, message: "Hubo un error", data: error });
+        return res.status(+response.code).json(response);
+    }
+}
+
+const validarCodigo = async (req, res) => {
+
+    let response = {};
+
+    try {
+        const { code, email } = req.body;
+        const exists = await userExists(email);
+
+        if (!exists || exists?.length === 0) {
+            response = responseBody({
+                code: 401, message: "Usuario inválido", data: false
+            });
+
+            return res.status(+response.code).json(response);
+        }
+
+        if (code !== exists.codigo_reset) {
+            response = responseBody({
+                code: 400, message: "Código inválido", data: false
+            });
+
+            return res.status(+response.code).json(response);
+        }
+
+        response = responseBody({
+            code: 200, message: "", data: true
+        });
+
+        return res.status(+response.code).json(response);
+
+    } catch (error) {
+        console.log({ error })
+        response = responseBody({ code: 500, message: "Hubo un error", data: error });
+        return res.status(+response.code).json(response);
+    }
+}
+
+const reestablecerContrasena = async (req, res) => {
+
+    let response = {};
+
+    try {
+
+        const { password, email } = req.body;
+
+        const exists = await userExists(email);
+
+        if (!exists || exists?.length === 0) {
+            response = responseBody({
+                code: 401, message: "Usuario inválido", data: false
+            });
+
+            return res.status(+response.code).json(response);
+        }
+
+        const updated = await Usuario.updateOne({ correo: email }, {
+            password: await encriptPassword(password)
+        });
+
+        if (!updated) {
+            response = responseBody({
+                code: 500, message: "No se pudo reestablecer la contraseña", data: null
+            });
+
+
+        } else {
+            response = responseBody({
+                code: 200,
+                message: "Tu contraseña ha sido reestablecida. Ya puedes iniciar sesión",
+                data: null
+            });
+        }
+
+        return res.status(+response.code).json(response);
+
+    } catch (error) {
+        console.log({ error })
+        response = responseBody({ code: 500, message: "Hubo un error", data: error });
+        return res.status(+response.code).json(response);
+    }
+}
+
 module.exports = {
     registar,
     login,
     obtenerUsuario,
-    actualizarCuenta
+    actualizarCuenta,
+    actualizarContrasena,
+    validarCuenta,
+    validarCodigo,
+    reestablecerContrasena
 }

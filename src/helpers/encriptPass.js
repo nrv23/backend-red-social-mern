@@ -5,6 +5,7 @@ async function encriptPassword(passwordText) {
 
     const saltRounds = 10;
     const salt = await getSalt(saltRounds);
+    console.log({ salt, passwordText })
     const password = await hash(passwordText, salt);
 
     return password;
