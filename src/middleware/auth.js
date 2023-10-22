@@ -9,16 +9,17 @@ module.exports = (req, res, next) => {
         return res.status(403).json({ message: 'No autenticado' });
     }
 
-    const token = authHeader.split(' ')[1]; //comentario de prueba1
+
     let verificarToken;
     let response = {};
     try {
+        const token = authHeader.split(' ')[1]; //comentario de prueba1
         verificarToken = decodeToken(token)
         req.currentUser = verificarToken;
     } catch (error) { // cae en el catch si el token no es valido
         response = responseBody({
             code: 500,
-            message: "Hubo un error en el servidor",
+            message: "Token no válido",
             data: null
         })
 

@@ -2,7 +2,6 @@ const { createTransport } = require("nodemailer");
 const smtp = require("nodemailer-smtp-transport");
 const config = require("../envs/config");
 
-console.log(config);
 const transport = createTransport(smtp({
     service: config.service,
     host: config.email_host,
@@ -11,7 +10,6 @@ const transport = createTransport(smtp({
         pass: config.googleKey
     }
 }))
-
 
 const sendMail = async (options) => {
 

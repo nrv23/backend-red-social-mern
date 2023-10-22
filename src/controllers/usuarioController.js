@@ -191,8 +191,6 @@ const actualizarCuenta = async (req, res) => {
             return res.status(+response.code).json(response);
         }
 
-        console.log(fechaNacimiento)
-
         const updated = await Usuario.updateOne({
             _id: id
         }, {
