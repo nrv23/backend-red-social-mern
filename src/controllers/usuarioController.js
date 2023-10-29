@@ -1,4 +1,6 @@
 const Usuario = require("../models/User");
+const UsuarioInvitacion = require("../models/User_Invite");
+const UsuarioAmigo = require("../models/User_Friend");
 const { encriptPassword, comparePass } = require("../helpers/encriptPass");
 const { responseBody } = require("../helpers/response-body");
 const { userExists } = require("../helpers/validateUserExistence");
@@ -407,6 +409,133 @@ const reestablecerContrasena = async (req, res) => {
     }
 }
 
+const enviarSolicitudAmistad = async (req, res) => {
+
+    let response = {};
+
+    try {
+
+        const { sub: id } = req.currentUser;
+        const { body: {
+            friendId
+        } } = req;
+
+        // validar que el usuario que envio la solilcitud exista en la bd
+
+        const exists = userExists(friendId);
+
+        if (!exists || exists?.length === 0) {
+            response = responseBody({
+                code: 404, message: "Usuario no existe", data: false
+            });
+
+            return res.status(+response.code).json(response);
+        }
+
+        const newFriendInvitation = new UsuarioInvitacion({
+            usuario_origen: id,
+            usuario_destino: friendId
+        });
+
+        if ((await newFriendInvitation.save())) {
+            response = responseBody({ code: 201, message: "Se ha enviado la solicitud de amistad", data: null });
+        } else {
+            response = responseBody({ code: 500, message: "No se pudo enviar la solicitud de amistad", data: null });
+        }
+
+        return res.status(+response.code).json(response);
+
+    } catch (error) {
+
+        console.log({ error })
+        response = responseBody({ code: 500, message: "Hubo un error", data: error });
+        return res.status(+response.code).json(response);
+    }
+}
+
+const aceptarSolicitudAmistad = async (req, res) => {
+
+    try {
+
+        const { sub: id } = req.currentUser;
+        const { body: {
+            friendId
+        } } = req;
+
+        // validar que el usuario que envio la solilcitud exista en la bd
+
+        const exists = userExists(friendId);
+
+        if (!exists || exists?.length === 0) {
+            response = responseBody({
+                code: 404, message: "Usuario no existe", data: false
+            });
+
+            return res.status(+response.code).json(response);
+        }
+
+        // agrega la nueva relacion del nuevo amigo
+
+        const newFriendAccepted = new UsuarioInvitacion({
+            usuario_origen: id,
+            usuario_destino: friendId
+        });
+
+        if ((await newFriendAccepted.save())) {
+            response = responseBody({ code: 201, message: "Se ha agregado el nuevo contacto", data: error });
+        } else {
+            response = responseBody({ code: 500, message: "No se pudo agregar el contacto", data: error });
+        }
+
+        return res.status(+response.code).json(response);
+
+    } catch (error) {
+        console.log({ error })
+        response = responseBody({ code: 500, message: "Hubo un error", data: error });
+        return res.status(+response.code).json(response);
+    }
+}
+
+const obtenerUsuariosRandmon = async (req, res) => {
+
+    let response = {};
+
+    try {
+        const { sub: id } = req.currentUser;
+        console.log(req.currentUser)
+        const usuarios = await Usuario.find({
+            $and: [
+                {
+                    _id: {
+                        $ne: id
+                    },
+                    estado: true
+                },
+                {
+                    _id: {
+                        $nin: UsuarioInvitacion.distinct('usuario_destino')
+                    }
+                }
+            ]
+        }, {
+            _id: 1, nombre: 1, apellidos: 1, profesion: 1
+        })
+        /* .populate('Usuqrio_Invitacion')
+         .limit(5)
+         .exec();*/
+
+
+        response = responseBody({ code: 200, message: "", data: usuarios });
+
+        return res.status(+response.code).json(response);
+
+    } catch (error) {
+        console.log({ error })
+        response = responseBody({ code: 500, message: "Hubo un error", data: error });
+        return res.status(+response.code).json(response);
+    }
+}
+
 module.exports = {
     registar,
     login,
@@ -415,5 +544,8 @@ module.exports = {
     actualizarContrasena,
     validarCuenta,
     validarCodigo,
-    reestablecerContrasena
+    reestablecerContrasena,
+    enviarSolicitudAmistad,
+    aceptarSolicitudAmistad,
+    obtenerUsuariosRandmon
 }

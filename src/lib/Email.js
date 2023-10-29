@@ -4,7 +4,6 @@ const ejs = require("ejs");
 const getFileContent = require("../helpers/file");
 const path = require("path");
 
-
 class Email {
 
     constructor(code, email) {
