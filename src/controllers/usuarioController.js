@@ -476,15 +476,15 @@ const aceptarSolicitudAmistad = async (req, res) => {
 
         // agrega la nueva relacion del nuevo amigo
 
-        const newFriendAccepted = new UsuarioInvitacion({
+        const newFriendAccepted = new UsuarioAmigo({
             usuario_origen: id,
-            usuario_destino: friendId
+            usuario_amigo: friendId
         });
 
         if ((await newFriendAccepted.save())) {
-            response = responseBody({ code: 201, message: "Se ha agregado el nuevo contacto", data: error });
+            response = responseBody({ code: 201, message: "Se ha agregado el nuevo contacto", data: null });
         } else {
-            response = responseBody({ code: 500, message: "No se pudo agregar el contacto", data: error });
+            response = responseBody({ code: 500, message: "No se pudo agregar el contacto", data: null });
         }
 
         return res.status(+response.code).json(response);
@@ -502,7 +502,9 @@ const obtenerUsuariosRandmon = async (req, res) => {
 
     try {
         const { sub: id } = req.currentUser;
+
         console.log(req.currentUser)
+
         const usuarios = await Usuario.find({
             $and: [
                 {
@@ -513,13 +515,13 @@ const obtenerUsuariosRandmon = async (req, res) => {
                 },
                 {
                     _id: {
-                        $nin: UsuarioInvitacion.distinct('usuario_destino')
+                        $nin: await UsuarioInvitacion.distinct('usuario_destino')
                     }
                 }
             ]
         }, {
             _id: 1, nombre: 1, apellidos: 1, profesion: 1
-        })
+        }).limit(5);
         /* .populate('Usuqrio_Invitacion')
          .limit(5)
          .exec();*/
@@ -536,6 +538,43 @@ const obtenerUsuariosRandmon = async (req, res) => {
     }
 }
 
+const cargarInvitacionesAmistad = async (req, res) => {
+
+    let response = {};
+    try {
+        const { sub: id } = req.currentUser;
+        let invitacionesList = [];
+
+        const invitaciones = await UsuarioInvitacion.find({
+            $and: [
+                {
+                    usuario_origen: id,
+
+                }
+            ]
+        })
+            .populate('usuario_origen', '_id nombre apellidos profesion')
+            .limit(5)
+            .exec();
+        for (const iterator of invitaciones) {
+            invitacionesList.push(iterator.usuario_origen)
+        }
+
+        response = responseBody({
+            code: 200,
+            message: "",
+            data: invitacionesList
+        });
+
+        return res.status(+response.code).json(response);
+    } catch (error) {
+        console.log({ error })
+        response = responseBody({ code: 500, message: "Hubo un error", data: error });
+        return res.status(+response.code).json(response);
+    }
+}
+
+
 module.exports = {
     registar,
     login,
@@ -547,5 +586,6 @@ module.exports = {
     reestablecerContrasena,
     enviarSolicitudAmistad,
     aceptarSolicitudAmistad,
-    obtenerUsuariosRandmon
+    obtenerUsuariosRandmon,
+    cargarInvitacionesAmistad
 }

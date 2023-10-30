@@ -10,7 +10,8 @@ const {
     reestablecerContrasena,
     enviarSolicitudAmistad,
     aceptarSolicitudAmistad,
-    obtenerUsuariosRandmon
+    obtenerUsuariosRandmon,
+    cargarInvitacionesAmistad
 } = require("../controllers/usuarioController");
 const auth = require("../middleware/auth");
 const router = Router();
@@ -26,5 +27,6 @@ router.patch("/reset-password", reestablecerContrasena);
 router.post("/send-friend-invitation", auth, enviarSolicitudAmistad);
 router.post("/accept-friend-invitation", auth, aceptarSolicitudAmistad);
 router.get("/users", auth, obtenerUsuariosRandmon);
+router.get("/friend-invitation", auth, cargarInvitacionesAmistad);
 
 module.exports = router;

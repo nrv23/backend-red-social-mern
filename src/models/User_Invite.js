@@ -16,6 +16,14 @@ const usuario_invitacionSchema = mongoose.Schema({
         type: Date,
         default: Date.now()
     },
+    enviadoPor: {
+        type: String,
+        required: true
+    },
+    estado: {
+        type: Boolean,
+        default: true
+    }
 
 });
 
